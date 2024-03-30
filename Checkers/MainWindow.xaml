@@ -17,6 +17,17 @@
     <Window.Resources>
         <conv:BoolToBrushValueConverter x:Key="BoolToBrushConverter"/>
         <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <Style x:Key="CurrentPlayerInfo" TargetType="Label">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding CurrentPlayer}" Value="Black">
+                    <Setter Property="Content" Value="Black's turn"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding CurrentPlayer}" Value="White">
+                    <Setter Property="Content" Value="White's turn"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    
     </Window.Resources>
     
     <Grid>
@@ -61,13 +72,14 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Button>
+                    <Button Command="{Binding DataContext.ClickCellCommand, RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}}"
+                    CommandParameter="{Binding}">
                         <Button.Template>
                             <ControlTemplate>
                                 <Border Width="65"
                                             Height="65"
                                             Background="{Binding IsBlack, Converter={StaticResource BoolToBrushConverter}}"
-                                        
+ 
                                             >
                                     <ContentControl>
                                         <ContentControl.Style>
@@ -140,5 +152,15 @@
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
+        <Button
+            Content="Move piece"
+            Command="{Binding MovePieceCommand}"
+            />
+        <Label
+            Grid.Row="2"
+            Grid.Column="1"
+            Style="{StaticResource CurrentPlayerInfo}"
+            />
+
     </Grid>
 </Window>

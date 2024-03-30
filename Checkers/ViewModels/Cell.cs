@@ -1,12 +1,20 @@
-﻿namespace Checkers.ViewModels
+﻿using System.ComponentModel;
+
+namespace Checkers.ViewModels
 {
-    public class Cell : BaseViewModel
+    public class Cell : INotifyPropertyChanged
     {
         private bool _isBlack;
 
         private bool _isOccupied;
 
         private CheckerTypes _content;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        public int Line { get; set; }
+
+        public int Column { get; set; }
 
         public bool IsBlack
         {
@@ -15,7 +23,7 @@
             set
             {
                 _isBlack = value;
-                OnPropertyChanged(nameof(IsBlack));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsBlack)));
             }
         }
 
@@ -26,7 +34,7 @@
             set
             {
                 _isOccupied = value;
-                OnPropertyChanged(nameof(IsOccupied));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsOccupied)));
             }
         }
 
@@ -37,12 +45,14 @@
             set
             {
                 _content = value;
-                OnPropertyChanged(nameof(Content));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Content)));
             }
         }
 
-        public Cell(bool isBlack, CheckerTypes content = default)
+        public Cell(bool isBlack, int line, int column, CheckerTypes content = default)
         {
+            Line = line;
+            Column = column;
             IsBlack = isBlack;
             if (content != default)
             {
