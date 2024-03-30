@@ -153,6 +153,7 @@
             </ItemsControl.ItemTemplate>
         </ItemsControl>
         <Button
+            Margin="40 40"
             Content="Move piece"
             Command="{Binding MovePieceCommand}"
             />

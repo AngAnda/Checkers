@@ -27,11 +27,22 @@ namespace Checkers.Services
             _currentPlayer = PlayerType.White;
         }
 
-        public bool IsMoveValid()
+        public bool IsMoveValid(ObservableCollection<Cell> cells)
         {
             if (_currentCell == null || _newCell == null)
                 return false;
-            return IsSimpleMoveValid();
+
+            return IsJumpMoveValid(cells) || IsSimpleMoveValid();
+        }
+
+        private bool IsJumpMoveValid(ObservableCollection<Cell> cells)
+        {
+            // to check if there is a checker in the middle with the oposite color of the current player
+            return (Math.Abs(_currentCell.Value.line - _newCell.Value.line) == 2 &&
+               Math.Abs(_currentCell.Value.column - _newCell.Value.column) == 2) &&
+               CheckerHelper.GetPlayerTypeFromChecker(cells[((_currentCell.Value.line + _newCell.Value.line) / 2) * 8
+               + (_currentCell.Value.column + _newCell.Value.column) / 2].Content) != _currentPlayer;
+
         }
 
         private bool IsSimpleMoveValid()
@@ -67,17 +78,26 @@ namespace Checkers.Services
 
             var currentCellIndex = _currentCell.Value.line * 8 + _currentCell.Value.column;
             var newCellIndex = _newCell.Value.line * 8 + _newCell.Value.column;
+            // se calculeaza indexul celulei curente si al celei noi
 
             cells[newCellIndex].Content = cells[currentCellIndex].Content;
             cells[newCellIndex].IsOccupied = true;
             cells[currentCellIndex].IsOccupied = false;
             cells[currentCellIndex].Content = CheckerTypes.None;
 
+            if (Math.Abs(_currentCell.Value.line - _newCell.Value.line) == 2)
+            {
+                var middleCellIndex = ((int)(_currentCell.Value.line + _newCell.Value.line) / 2) * 8 + (int)(_currentCell.Value.column + _newCell.Value.column) / 2;
+                cells[middleCellIndex].Content = CheckerTypes.None;
+                cells[middleCellIndex].IsOccupied = false;
+            }
+
 
             CurrentPlayer = (CurrentPlayer == PlayerType.White) ? PlayerType.Black : PlayerType.White;
             _currentCell = null;
             _newCell = null;
         }
+
 
         public void CellClicked(Cell cell)
         {

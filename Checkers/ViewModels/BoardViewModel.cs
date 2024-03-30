@@ -98,7 +98,7 @@ namespace Checkers.ViewModels
 
         public bool isMoveValid(object parameter)
         {
-            return _gameService.IsMoveValid();
+            return _gameService.IsMoveValid(Cells);
         }
 
     }
