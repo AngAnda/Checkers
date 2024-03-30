@@ -46,19 +46,25 @@
 
         <Menu Grid.Row="0">
             <MenuItem Header="_File">
-                <MenuItem Header="_New Game"/>
-                <MenuItem Header="_Save"/>
-                <MenuItem Header="_Open"/>
+                <MenuItem Header="_New Game"
+                          Command="{Binding NewGameCommand}"
+                          />
+                <MenuItem Header="_Save"
+                          Command="{Binding SaveGameCommand}"/>
+                <MenuItem Header="_Open"
+                          Command="{Binding LoadGameCommand}"/>
                 <MenuItem Header="_Allow Multiple Jumps"/>
-                <MenuItem Header="_Statistics"/>
+                <MenuItem Header="_Statistics"
+                          Command="{Binding DisplayStatisticsCommand}"
+                          />
             </MenuItem>
             <MenuItem Header="_Help">
-                <MenuItem Header="_About"/>
+                <MenuItem Header="_About" Command="{Binding DisplayInfoCommand}"/>
             </MenuItem>
         </Menu>
 
         <ItemsControl
-            ItemsSource="{Binding Cells}" 
+            ItemsSource="{Binding GameStatus.Cells}" 
             Background="Gray"
             Grid.Row="1"
             Grid.Column="1"

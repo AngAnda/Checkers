@@ -10,17 +10,16 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 namespace Checkers.Views
 {
     /// <summary>
-    /// Interaction logic for GameView.xaml
+    /// Interaction logic for About.xaml
     /// </summary>
-    public partial class GameView : Page
+    public partial class About : Window
     {
-        public GameView()
+        public About()
         {
             InitializeComponent();
         }

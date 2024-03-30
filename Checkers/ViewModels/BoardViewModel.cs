@@ -1,5 +1,7 @@
-﻿using Checkers.Services;
-using System.Collections.ObjectModel;
+﻿using Checkers.Models;
+using Checkers.Services;
+using Checkers.Views;
+using System.Windows;
 using System.Windows.Input;
 
 namespace Checkers.ViewModels
@@ -8,18 +10,24 @@ namespace Checkers.ViewModels
     {
         private readonly GameService _gameService;
 
-        private ObservableCollection<Cell> _cells;
+        private readonly FilesService _jsonService;
 
-        public ObservableCollection<Cell> Cells
+        private GameStatus _gameStatus;
+
+        public GameStatus GameStatus
         {
-            get { return _cells; }
-
+            get => _gameStatus;
             set
             {
-                _cells = value;
-                OnPropertyChanged(nameof(Cells));
+                if (_gameStatus != value)
+                {
+                    _gameStatus = value;
+                    OnPropertyChanged(nameof(GameStatus));
+                    OnPropertyChanged(nameof(GameStatus.Cells));
+                }
             }
         }
+
 
         public PlayerType CurrentPlayer
         {
@@ -37,47 +45,76 @@ namespace Checkers.ViewModels
 
         public BoardViewModel()
         {
+
+            GameStatus = new GameStatus(PlayerType.White, false);
             _gameService = new GameService();
-
-            Cells = new ObservableCollection<Cell>();
-
-            for (int i = 0; i < 8; i++)
-            {
-                for (int j = 0; j < 8; j++)
-                {
-                    bool isBlack = (i + j) % 2 == 1;
-                    if (i < 3 && isBlack)
-                    {
-                        Cells.Add(new Cell(isBlack, i, j, CheckerTypes.BlackPawn));
-                    }
-                    else if (i > 4 && isBlack)
-                    {
-                        Cells.Add(new Cell(isBlack, i, j, CheckerTypes.WhitePawn));
-                    }
-                    else if (i == 3 && j == 3 || i == 4 && j == 4)
-                    {
-                        Cells.Add(new Cell(isBlack, i, j, CheckerTypes.WhiteKing));
-                    }
-                    else if (i == 3 && j == 4 || i == 4 && j == 3)
-                    {
-                        Cells.Add(new Cell(isBlack, i, j, CheckerTypes.BlackKing));
-                    }
-
-                    else
-                    {
-                        Cells.Add(new Cell(isBlack, i, j));
-                    }
-                }
-            }
+            _jsonService = new FilesService();
 
             ClickCellCommand = new RelayCommand(ClickCell);
             MovePieceCommand = new RelayCommand(MovePiece, isMoveValid);
+            SaveGameCommand = new RelayCommand(SaveGame);
+            LoadGameCommand = new RelayCommand(LoadGame);
+            NewGameCommand = new RelayCommand(NewGame);
+            DisplayInfoCommand = new RelayCommand(DisplayInfo);
+            DisplayStatisticsCommand = new RelayCommand(DisplayStatistics);
         }
 
 
         public ICommand ClickCellCommand { get; set; }
 
         public ICommand MovePieceCommand { get; set; }
+
+        public ICommand SaveGameCommand { get; set; }
+
+        public ICommand LoadGameCommand { get; set; }
+
+        public ICommand NewGameCommand { get; set; }
+
+        public ICommand DisplayInfoCommand { get; set; }
+
+        public ICommand DisplayStatisticsCommand { get; set; }
+
+        public void DisplayInfo(object parameter)
+        {
+            About aboutWindow = new About();
+            aboutWindow.Show();
+        }
+
+        public void DisplayStatistics(object parameter)
+        {
+            Statistics statisticsWindow = new Statistics();
+            statisticsWindow.Show();
+        }
+
+        public void NewGame(object parameter)
+        {
+            MessageBoxResult result = MessageBox.Show(
+            "Will the new game support multiple jumps?",
+            "New Game Settings",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                GameStatus = new GameStatus(PlayerType.White, true);
+            }
+            else if (result == MessageBoxResult.No)
+            {
+                GameStatus = new GameStatus(PlayerType.White, false);
+            }
+
+
+        }
+
+        public void SaveGame(object parameter)
+        {
+            _jsonService.SaveObjectToFile(GameStatus);
+        }
+
+        public void LoadGame(object parameter)
+        {
+            GameStatus = _jsonService.LoadObjectFromFile<GameStatus>();
+        }
 
         public void ClickCell(object parameter)
         {
@@ -92,13 +129,19 @@ namespace Checkers.ViewModels
 
         public void MovePiece(object parameter)
         {
+            int whiteCheckers = GameStatus.WhiteCheckers;
+            int blackCheckers = GameStatus.BlackCheckers;
 
-            _gameService.MovePiece(Cells);
+            _gameService.MovePiece(GameStatus.Cells, ref whiteCheckers, ref blackCheckers);
+
+            GameStatus.WhiteCheckers = whiteCheckers;
+            GameStatus.BlackCheckers = blackCheckers;
+            _gameService.GameOver(GameStatus.WhiteCheckers, GameStatus.BlackCheckers);
         }
 
         public bool isMoveValid(object parameter)
         {
-            return _gameService.IsMoveValid(Cells);
+            return _gameService.IsMoveValid(GameStatus.Cells);
         }
 
     }
