@@ -8,17 +8,17 @@
         Title="About" Height="450" Width="800">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="10">
-            <TextBlock Text="Creator: John Doe"
+            <TextBlock Text="Creator: Andreea Angelescu"
                        FontSize="20" FontWeight="Bold"
                        Margin="0,0,0,10"
                        HorizontalAlignment="Center"/>
 
-            <TextBlock Text="Email: john.doe@university.edu"
+            <TextBlock Text="Email: andreea-o.angelescu@student.untibv.ro"
                        FontSize="16"
                        Margin="0,0,0,10"
                        HorizontalAlignment="Center"/>
 
-            <TextBlock Text="Group: CS101"
+            <TextBlock Text="Group: 10LF221"
                        FontSize="16"
                        Margin="0,0,0,20"
                        HorizontalAlignment="Center"/>

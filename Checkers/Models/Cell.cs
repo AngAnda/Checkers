@@ -1,6 +1,7 @@
-﻿using System.ComponentModel;
+﻿using Checkers.ViewModels;
+using System.ComponentModel;
 
-namespace Checkers.ViewModels
+namespace Checkers.Models
 {
     public class Cell : INotifyPropertyChanged
     {

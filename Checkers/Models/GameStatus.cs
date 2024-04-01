@@ -7,6 +7,10 @@ namespace Checkers.Models
 {
     public class GameStatus
     {
+        public GameStatus()
+        {
+        }
+
         public GameStatus(PlayerType currentPlayer, bool isMultiJump)
         {
             Cells = new ObservableCollection<Cell>();
@@ -36,6 +40,7 @@ namespace Checkers.Models
             }
         }
 
+
         public GameStatus(ObservableCollection<Cell> cells, PlayerType currentPlayer, bool isMultiJump)
         {
             Cells = cells;
@@ -44,7 +49,7 @@ namespace Checkers.Models
         }
 
         [JsonConstructor]
-        public GameStatus(ObservableCollection<Cell> cells, PlayerType currentPlayer, bool isMultiJump, int whiteCheckers, int blackCheckers) : this(cells, currentPlayer, isMultiJump)
+        public GameStatus(ObservableCollection<Cell> cells, PlayerType currentPlayer, bool isMultiJump, int whiteCheckers, int blackCheckers)
         {
             Cells = cells;
             CurrentPlayer = currentPlayer;

@@ -1,4 +1,5 @@
 ﻿using Checkers.Helpers;
+using Checkers.Models;
 using Checkers.ViewModels;
 using System.Collections.ObjectModel;
 using System.Windows;
@@ -145,7 +146,6 @@ namespace Checkers.Services
 
         private void CheckForKing(ObservableCollection<Cell> cells, int newIndex)
         {
-            // de ce nu merge pentru white?
             if (_currentPlayer == PlayerType.White && _newCell.Value.line == 0)
             {
                 cells[newIndex].Content = CheckerTypes.WhiteKing;
@@ -171,8 +171,10 @@ namespace Checkers.Services
 
         private bool IsKingMoveValid()
         {
-            return (Math.Abs(_currentCell.Value.line - _newCell.Value.line) == 1 &&
-                    Math.Abs(_currentCell.Value.column - _newCell.Value.column) == 1);
+
+            var rowChange = Math.Abs(_currentCell.Value.line - _newCell.Value.line);
+            var columnChange = Math.Abs(_currentCell.Value.column - _newCell.Value.column);
+            return (rowChange == 1 && columnChange == 1);
         }
     }
 }

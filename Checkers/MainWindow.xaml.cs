@@ -12,6 +12,5 @@ namespace Checkers
             InitializeComponent();
         }
 
-
     }
 }
