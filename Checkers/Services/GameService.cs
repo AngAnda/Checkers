@@ -1,6 +1,5 @@
 ﻿using Checkers.Helpers;
 using Checkers.Models;
-using Checkers.ViewModels;
 using System.Collections.ObjectModel;
 using System.Windows;
 
@@ -15,6 +14,8 @@ namespace Checkers.Services
 
         private GameStatus _gameStatus;
 
+        private BoardManager boardManager;
+
         private MoveValidator moveValidator;
         public GameService(GameStatus gameStatus)
         {
@@ -22,6 +23,7 @@ namespace Checkers.Services
             _newCell = null;
             _gameStatus = gameStatus;
             moveValidator = new MoveValidator();
+            boardManager = new BoardManager();
         }
 
         public void Reset()
@@ -64,11 +66,6 @@ namespace Checkers.Services
             }
         }
 
-        public void AssignCheckerType(IList<Cell> cells, (int line, int column) cell, CheckerTypes checkerType)
-        {
-            var cellIndex = cell.line * 8 + cell.column;
-            cells[cellIndex].Content = checkerType;
-        }
 
         public void MovePiece(ObservableCollection<Cell> cells, ref int whiteCheckerNumber, ref int blackCheckerNumber)
         {
@@ -83,44 +80,25 @@ namespace Checkers.Services
             if (moveValidator.IsJump(_gameStatus, cells[currentCellIndex], cells[newCellIndex]))
             {
                 // se gaseste celula intermediara
-                var middleCellIndex = ((int)(_currentCell.Value.line + _newCell.Value.line) / 2) * 8 + (int)(_currentCell.Value.column + _newCell.Value.column) / 2;
-
-                // se elimina piesa capturata
-                cells[middleCellIndex].Content = CheckerTypes.None;
-                cells[middleCellIndex].IsOccupied = false;
-
-                // se scade numarul de piese
-                if (_gameStatus.CurrentPlayer == PlayerType.White)
-                {
-                    whiteCheckerNumber--;
-                }
-                else
-                {
-                    blackCheckerNumber--;
-                }
-
+                boardManager.JumpOverChecker(_gameStatus, currentCellIndex, newCellIndex);
                 possibleMultipleMove = true;
             }
 
 
             // se inlocuiesc celulele in cells
-            cells[newCellIndex].Content = cells[currentCellIndex].Content;
-            cells[newCellIndex].IsOccupied = true;
-            cells[currentCellIndex].IsOccupied = false;
-            cells[currentCellIndex].Content = CheckerTypes.None;
+            boardManager.MoveChecker(_gameStatus, currentCellIndex, newCellIndex);
 
 
             // se verifica daca functia a devenit king
-            CheckForKing(cells, newCellIndex);
-
+            boardManager.CheckForKing(_gameStatus, _gameStatus.Cells[newCellIndex]);
             _currentCell = _newCell;
 
-
-            if (
-                 moveValidator.MultipleJumps(_gameStatus, cells[newCellIndex])  // se verifica daca sunt posibile multiple mutari
+            if (moveValidator.MultipleJumps(_gameStatus, cells[newCellIndex])  // se verifica daca sunt posibile multiple mutari
                 && !_currentMultipleJump // se verifica daca suntem in mijlocul unei sarituri multiple
                 && possibleMultipleMove
-                && _gameStatus.IsMultiJump)// se verifica daca sunt permise multiple mutari din setarile jocului
+                && _gameStatus.IsMultiJump)
+
+            // se verifica daca sunt permise multiple mutari din setarile jocului
             // se verifica daca a fost facuta o saritura 
             {
                 MessageBox.Show($"Multiple jumps are allowed for {_gameStatus.CurrentPlayer}");
@@ -129,8 +107,7 @@ namespace Checkers.Services
             }
             else
             {
-
-                _gameStatus.CurrentPlayer = (_gameStatus.CurrentPlayer == PlayerType.White) ? PlayerType.Black : PlayerType.White;
+                boardManager.ChangePlayer(_gameStatus);
                 _currentCell = null;
                 _newCell = null;
                 _gameStatus.GameStarted = false;
@@ -147,18 +124,6 @@ namespace Checkers.Services
             }
         }
 
-        private void CheckForKing(ObservableCollection<Cell> cells, int newIndex)
-        {
-            if (_gameStatus.CurrentPlayer == PlayerType.White && _newCell.Value.line == 0)
-            {
-                cells[newIndex].Content = CheckerTypes.WhiteKing;
-            }
-            else if (_gameStatus.CurrentPlayer == PlayerType.Black && _newCell.Value.line == 7)
-            {
-                AssignCheckerType(cells, _newCell.Value, CheckerTypes.BlackKing);
-                cells[newIndex].Content = CheckerTypes.BlackKing;
-            }
-        }
 
         public void CellClicked(Cell cell)
         {
