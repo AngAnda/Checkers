@@ -11,24 +11,29 @@ namespace Checkers.Services
 
         private (int line, int column)? _currentCell, _newCell;
 
-        private PlayerType _currentPlayer = PlayerType.White;
+        private bool _currentMultipleJump;
 
-        public PlayerType CurrentPlayer
-        {
-            get { return _currentPlayer; }
+        private GameStatus _gameStatus;
 
-            set
-            {
-                _currentPlayer = value;
-            }
-        }
-
-        public GameService(bool allowMultiJump = false)
+        private MoveValidator moveValidator;
+        public GameService(GameStatus gameStatus)
         {
             _currentCell = null;
             _newCell = null;
-            _currentPlayer = PlayerType.White;
+            _gameStatus = gameStatus;
+            moveValidator = new MoveValidator();
+        }
 
+        public void Reset()
+        {
+            _currentCell = null;
+            _newCell = null;
+            _currentMultipleJump = false;
+        }
+
+        public void LoadGame(GameStatus gameStatus)
+        {
+            _gameStatus = gameStatus;
         }
 
         public bool IsMoveValid(ObservableCollection<Cell> cells)
@@ -36,53 +41,16 @@ namespace Checkers.Services
             if (_currentCell == null || _newCell == null)
                 return false;
 
-            if (cells[_currentCell.Value.line * 8 + _currentCell.Value.column].Content == CheckerTypes.WhiteKing ||
-                               cells[_currentCell.Value.line * 8 + _currentCell.Value.column].Content == CheckerTypes.BlackKing)
-            {
-                return IsKingMoveValid();
-            }
+            Cell startCell = cells[_currentCell.Value.line * 8 + _currentCell.Value.column];
+            Cell endCell = cells[_newCell.Value.line * 8 + _newCell.Value.column];
 
-            return IsJumpMoveValid(cells) || IsSimpleMoveValid();
-        }
+            return moveValidator.IsMoveValid(_gameStatus, startCell, endCell, _currentMultipleJump);
 
-        /// <summary>Determines whether [is jump move valid] [the specified cells].</summary>
-        /// <param name="cells">The cells.</param>
-        /// <returns>
-        ///   <c>true</c> if [is jump move valid] [the specified cells]; otherwise, <c>false</c>.</returns>
-        private bool IsJumpMoveValid(ObservableCollection<Cell> cells)
-        {
-            bool isMovingTwoSpaces = Math.Abs(_currentCell.Value.line - _newCell.Value.line) == 2 &&
-                                     Math.Abs(_currentCell.Value.column - _newCell.Value.column) == 2;
-
-            int middleCellLine = (_currentCell.Value.line + _newCell.Value.line) / 2;
-            int middleCellColumn = (_currentCell.Value.column + _newCell.Value.column) / 2;
-
-            int middleCellIndex = middleCellLine * 8 + middleCellColumn;
-
-            bool isOpponentPieceInBetween =
-                CheckerHelper.GetPlayerTypeFromChecker(cells[middleCellIndex].Content) != _currentPlayer;
-
-            return isMovingTwoSpaces && isOpponentPieceInBetween;
-
-        }
-
-        private bool IsSimpleMoveValid()
-        {
-
-            int rowChange = _newCell.Value.line - _currentCell.Value.line;
-            int isWhite = (_currentPlayer == PlayerType.White) ? 1 : -1;
-
-            bool isDiagonalMove = Math.Abs(_currentCell.Value.line - _newCell.Value.line) == 1 &&
-                                  Math.Abs(_currentCell.Value.column - _newCell.Value.column) == 1;
-
-            bool isForwardMove = rowChange == -isWhite;
-
-            return isDiagonalMove && isForwardMove;
         }
 
         private void AssignCurrentCell(Cell cell)
         {
-            if (CheckerHelper.GetPlayerTypeFromChecker(cell.Content) == _currentPlayer)
+            if (CheckerHelper.GetPlayerTypeFromChecker(cell.Content) == _gameStatus.CurrentPlayer)
             {
                 _currentCell = (cell.Line, cell.Column);
             }
@@ -105,20 +73,24 @@ namespace Checkers.Services
         public void MovePiece(ObservableCollection<Cell> cells, ref int whiteCheckerNumber, ref int blackCheckerNumber)
         {
 
+            bool possibleMultipleMove = false;
+
+            // se gaseste celula initiala
             var currentCellIndex = _currentCell.Value.line * 8 + _currentCell.Value.column;
             var newCellIndex = _newCell.Value.line * 8 + _newCell.Value.column;
 
-            cells[newCellIndex].Content = cells[currentCellIndex].Content;
-            cells[newCellIndex].IsOccupied = true;
-            cells[currentCellIndex].IsOccupied = false;
-            cells[currentCellIndex].Content = CheckerTypes.None;
-
-            if (Math.Abs(_currentCell.Value.line - _newCell.Value.line) == 2)
+            // functionalitate pentru a captura o piesa
+            if (moveValidator.IsJump(_gameStatus, cells[currentCellIndex], cells[newCellIndex]))
             {
+                // se gaseste celula intermediara
                 var middleCellIndex = ((int)(_currentCell.Value.line + _newCell.Value.line) / 2) * 8 + (int)(_currentCell.Value.column + _newCell.Value.column) / 2;
+
+                // se elimina piesa capturata
                 cells[middleCellIndex].Content = CheckerTypes.None;
                 cells[middleCellIndex].IsOccupied = false;
-                if (_currentPlayer == PlayerType.White)
+
+                // se scade numarul de piese
+                if (_gameStatus.CurrentPlayer == PlayerType.White)
                 {
                     whiteCheckerNumber--;
                 }
@@ -126,14 +98,45 @@ namespace Checkers.Services
                 {
                     blackCheckerNumber--;
                 }
+
+                possibleMultipleMove = true;
             }
+
+
+            // se inlocuiesc celulele in cells
+            cells[newCellIndex].Content = cells[currentCellIndex].Content;
+            cells[newCellIndex].IsOccupied = true;
+            cells[currentCellIndex].IsOccupied = false;
+            cells[currentCellIndex].Content = CheckerTypes.None;
+
+
+            // se verifica daca functia a devenit king
             CheckForKing(cells, newCellIndex);
 
-            CurrentPlayer = (CurrentPlayer == PlayerType.White) ? PlayerType.Black : PlayerType.White;
+            _currentCell = _newCell;
 
-            _currentCell = null;
 
-            _newCell = null;
+            if (
+                 moveValidator.MultipleJumps(_gameStatus, cells[newCellIndex])  // se verifica daca sunt posibile multiple mutari
+                && !_currentMultipleJump // se verifica daca suntem in mijlocul unei sarituri multiple
+                && possibleMultipleMove
+                && _gameStatus.IsMultiJump)// se verifica daca sunt permise multiple mutari din setarile jocului
+            // se verifica daca a fost facuta o saritura 
+            {
+                MessageBox.Show($"Multiple jumps are allowed for {_gameStatus.CurrentPlayer}");
+                _newCell = null;
+                _currentMultipleJump = true;
+            }
+            else
+            {
+
+                _gameStatus.CurrentPlayer = (_gameStatus.CurrentPlayer == PlayerType.White) ? PlayerType.Black : PlayerType.White;
+                _currentCell = null;
+                _newCell = null;
+                _gameStatus.GameStarted = false;
+                _currentMultipleJump = false;
+            }
+
         }
 
         public void GameOver(int whiteCheckerNumber, int blackCheckerNumber)
@@ -146,11 +149,11 @@ namespace Checkers.Services
 
         private void CheckForKing(ObservableCollection<Cell> cells, int newIndex)
         {
-            if (_currentPlayer == PlayerType.White && _newCell.Value.line == 0)
+            if (_gameStatus.CurrentPlayer == PlayerType.White && _newCell.Value.line == 0)
             {
                 cells[newIndex].Content = CheckerTypes.WhiteKing;
             }
-            else if (_currentPlayer == PlayerType.Black && _newCell.Value.line == 7)
+            else if (_gameStatus.CurrentPlayer == PlayerType.Black && _newCell.Value.line == 7)
             {
                 AssignCheckerType(cells, _newCell.Value, CheckerTypes.BlackKing);
                 cells[newIndex].Content = CheckerTypes.BlackKing;
@@ -159,7 +162,7 @@ namespace Checkers.Services
 
         public void CellClicked(Cell cell)
         {
-            if (cell.IsOccupied)
+            if (cell.IsOccupied && !_currentMultipleJump)
             {
                 AssignCurrentCell(cell);
             }
@@ -169,12 +172,5 @@ namespace Checkers.Services
             }
         }
 
-        private bool IsKingMoveValid()
-        {
-
-            var rowChange = Math.Abs(_currentCell.Value.line - _newCell.Value.line);
-            var columnChange = Math.Abs(_currentCell.Value.column - _newCell.Value.column);
-            return (rowChange == 1 && columnChange == 1);
-        }
     }
 }

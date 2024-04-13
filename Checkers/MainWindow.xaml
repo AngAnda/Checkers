@@ -53,7 +53,10 @@
                           Command="{Binding SaveGameCommand}"/>
                 <MenuItem Header="_Open"
                           Command="{Binding LoadGameCommand}"/>
-                <MenuItem Header="_Allow Multiple Jumps"/>
+                <MenuItem Header="_Allow Multiple Jumps"
+                          IsCheckable="True"
+                          Command="{Binding ToggleMultipleJumps}"
+                          />
                 <MenuItem Header="_Statistics"
                           Command="{Binding DisplayStatisticsCommand}"
                           />

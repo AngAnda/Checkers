@@ -11,11 +11,11 @@ namespace Checkers.Models
         {
         }
 
-        public GameStatus(PlayerType currentPlayer, bool isMultiJump)
+        public GameStatus(PlayerType currentPlayer)
         {
             Cells = new ObservableCollection<Cell>();
             CurrentPlayer = currentPlayer;
-            IsMultiJump = isMultiJump;
+            IsMultiJump = false;
             WhiteCheckers = 12;
             BlackCheckers = 12;
             for (int i = 0; i < 8; i++)
@@ -67,6 +67,8 @@ namespace Checkers.Models
         public int WhiteCheckers { get; set; }
 
         public int BlackCheckers { get; set; }
+
+        public bool GameStarted { get; set; }
 
     }
 }

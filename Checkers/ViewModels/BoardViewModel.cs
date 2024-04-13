@@ -28,35 +28,36 @@ namespace Checkers.ViewModels
             }
         }
 
-
         public PlayerType CurrentPlayer
         {
-            get { return _gameService.CurrentPlayer; }
+            get { return _gameStatus.CurrentPlayer; }
 
             set
             {
-                if (_gameService.CurrentPlayer != value)
+                if (_gameStatus.CurrentPlayer != value)
                 {
-                    _gameService.CurrentPlayer = value;
+                    _gameStatus.CurrentPlayer = value;
                     OnPropertyChanged(nameof(CurrentPlayer));
                 }
             }
         }
 
+
         public BoardViewModel()
         {
 
-            GameStatus = new GameStatus(PlayerType.White, false);
-            _gameService = new GameService();
+            GameStatus = new GameStatus(PlayerType.White);
+            _gameService = new GameService(GameStatus);
             _jsonService = new FilesService();
 
             ClickCellCommand = new RelayCommand(ClickCell);
-            MovePieceCommand = new RelayCommand(MovePiece, isMoveValid);
+            MovePieceCommand = new RelayCommand(MovePiece, IsMoveValid);
             SaveGameCommand = new RelayCommand(SaveGame);
             LoadGameCommand = new RelayCommand(LoadGame);
             NewGameCommand = new RelayCommand(NewGame);
             DisplayInfoCommand = new RelayCommand(DisplayInfo);
             DisplayStatisticsCommand = new RelayCommand(DisplayStatistics);
+            ToggleMultipleJumps = new RelayCommand(ToggleMultipleJumpsCommand, IsMultipleJumpsCheckable);
         }
 
 
@@ -74,6 +75,8 @@ namespace Checkers.ViewModels
 
         public ICommand DisplayStatisticsCommand { get; set; }
 
+        public ICommand ToggleMultipleJumps { get; set; }
+
         public void DisplayInfo(object parameter)
         {
             About aboutWindow = new About();
@@ -89,20 +92,16 @@ namespace Checkers.ViewModels
         public void NewGame(object parameter)
         {
             MessageBoxResult result = MessageBox.Show(
-            "Will the new game support multiple jumps?",
+            "Do you want to start a new game?",
             "New Game Settings",
             MessageBoxButton.YesNo,
             MessageBoxImage.Question);
 
             if (result == MessageBoxResult.Yes)
             {
-                GameStatus = new GameStatus(PlayerType.White, true);
+                GameStatus = new GameStatus(PlayerType.White);
+                _gameService.LoadGame(GameStatus);
             }
-            else if (result == MessageBoxResult.No)
-            {
-                GameStatus = new GameStatus(PlayerType.White, false);
-            }
-
 
         }
 
@@ -113,12 +112,19 @@ namespace Checkers.ViewModels
 
         public void LoadGame(object parameter)
         {
-            GameStatus = _jsonService.LoadObjectFromFile<GameStatus>();
+            try
+            {
+                GameStatus = _jsonService.LoadObjectFromFile<GameStatus>();
+                _gameService.LoadGame(GameStatus);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Error loading game: " + e.Message);
+            }
         }
 
         public void ClickCell(object parameter)
         {
-
             var cell = parameter as Cell;
 
             if (cell != null)
@@ -137,11 +143,25 @@ namespace Checkers.ViewModels
             GameStatus.WhiteCheckers = whiteCheckers;
             GameStatus.BlackCheckers = blackCheckers;
             _gameService.GameOver(GameStatus.WhiteCheckers, GameStatus.BlackCheckers);
+
+
+            _gameStatus.GameStarted = true;
         }
 
-        public bool isMoveValid(object parameter)
+        public bool IsMoveValid(object parameter)
         {
             return _gameService.IsMoveValid(GameStatus.Cells);
+        }
+
+        public void ToggleMultipleJumpsCommand(object parameter)
+        {
+            _gameStatus.IsMultiJump = !_gameStatus.IsMultiJump;
+            MessageBox.Show("Multiple jumps are now " + (_gameStatus.IsMultiJump ? "enabled" : "disabled"));
+        }
+
+        public bool IsMultipleJumpsCheckable(object parameter)
+        {
+            return !_gameStatus.GameStarted;
         }
 
     }
