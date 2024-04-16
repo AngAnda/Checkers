@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using Checkers.Models;
+using Microsoft.Win32;
 using System.IO;
 
 namespace Checkers.Services
@@ -36,5 +37,50 @@ namespace Checkers.Services
 
             return default;
         }
+
+        public void SaveStatisticsToFile(GameStatistics gameStatistics)
+        {
+            try
+            {
+                string fileName = "statistics.json";
+
+                if (!File.Exists(fileName))
+                {
+                    File.Create(fileName).Dispose();
+                }
+
+                List<GameStatistics> statistics = JsonService.Deserialize<List<GameStatistics>>(File.ReadAllText(fileName));
+
+                statistics.Add(gameStatistics);
+
+                File.WriteAllText(fileName, JsonService.Serialize(statistics));
+            }
+            catch (Exception)
+            {
+                //MessageBox.Show("Error while saving statistics");
+            }
+
+        }
+
+        public List<GameStatistics> LoadStatisticsFromFile()
+        {
+            try
+            {
+                string fileName = "statistics.json";
+
+                if (!File.Exists(fileName))
+                {
+                    File.Create(fileName).Dispose();
+                }
+
+                return JsonService.Deserialize<List<GameStatistics>>(File.ReadAllText(fileName));
+            }
+            catch (Exception)
+            {
+                // MessageBox.Show("Error while loading statistics");
+                return new List<GameStatistics>();
+            }
+        }
+
     }
 }

@@ -19,10 +19,10 @@
         <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <Style x:Key="CurrentPlayerInfo" TargetType="Label">
             <Style.Triggers>
-                <DataTrigger Binding="{Binding CurrentPlayer}" Value="Black">
+                <DataTrigger Binding="{Binding GameStatus.CurrentPlayer}" Value="Black">
                     <Setter Property="Content" Value="Black's turn"/>
                 </DataTrigger>
-                <DataTrigger Binding="{Binding CurrentPlayer}" Value="White">
+                <DataTrigger Binding="{Binding GameStatus.CurrentPlayer}" Value="White">
                     <Setter Property="Content" Value="White's turn"/>
                 </DataTrigger>
             </Style.Triggers>
@@ -65,6 +65,14 @@
                 <MenuItem Header="_About" Command="{Binding DisplayInfoCommand}"/>
             </MenuItem>
         </Menu>
+        <Label
+            Grid.Row="2"
+            Grid.Column="1"
+            Style="{StaticResource CurrentPlayerInfo}"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            FontSize="30"
+            />
 
         <ItemsControl
             ItemsSource="{Binding GameStatus.Cells}" 
@@ -165,11 +173,6 @@
             Margin="40 40"
             Content="Move piece"
             Command="{Binding MovePieceCommand}"
-            />
-        <Label
-            Grid.Row="2"
-            Grid.Column="1"
-            Style="{StaticResource CurrentPlayerInfo}"
             />
 
     </Grid>

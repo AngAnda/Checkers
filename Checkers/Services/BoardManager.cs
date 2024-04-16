@@ -16,22 +16,18 @@ namespace Checkers.Services
 
         public void JumpOverChecker(GameStatus gameStatus, int startIndex, int endIndex)
         {
-            // se gaseste celula intermediara
-            var middleCellIndex = (startIndex + endIndex) / 2; // posibila eroare
-            //var middleCellIndex = ((int)(_currentCell.Value.line + _newCell.Value.line) / 2) * 8 + (int)(_currentCell.Value.column + _newCell.Value.column) / 2;
+            var middleCellIndex = (startIndex + endIndex) / 2;
 
-            // se elimina piesa capturata
             gameStatus.Cells[middleCellIndex].Content = CheckerTypes.None;
             gameStatus.Cells[middleCellIndex].IsOccupied = false;
 
-            // se scade numarul de piese
             if (gameStatus.CurrentPlayer == PlayerType.White)
             {
-                gameStatus.WhiteCheckers--;
+                gameStatus.BlackCheckers--;
             }
             else
             {
-                gameStatus.BlackCheckers--;
+                gameStatus.WhiteCheckers--;
             }
 
         }

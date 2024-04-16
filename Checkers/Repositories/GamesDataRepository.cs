@@ -2,42 +2,33 @@
 using Checkers.Services;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Windows;
 
 namespace Checkers.Repositories
 {
     public class GamesDataRepository
     {
+        private const string StatisticsFileName = "statistics.json";
+
         public GamesDataRepository()
         {
             GameStatistics = LoadGameStatistics();
         }
 
         public ObservableCollection<GameStatistics> GameStatistics { get; set; }
+
         public void SaveGameStatistics(GameStatistics gameStatistics)
         {
-            var json = JsonService.Serialize(gameStatistics);
-            var fileName = $"{DateTime.Now:yyyy-MM-dd-HH-mm-ss}.json";
-            File.WriteAllText($"Data/{fileName}", json);
-        }
-
-        public void AddGameStatistics(GameStatistics gameStatistics)
-        {
-            GameStatistics.Add(gameStatistics);
-            SaveGameStatistics(gameStatistics);
-        }
-
-        public ObservableCollection<GameStatistics> LoadGameStatistics()
-        {
-            var gameStatistics = new ObservableCollection<GameStatistics>();
-            var files = Directory.GetFiles("Data", "*.json");
-
-            foreach (var file in files)
+            try
             {
-                var json = File.ReadAllText(file);
-                gameStatistics.Add(JsonService.Deserialize<GameStatistics>(json));
+                GameStatistics.Add(gameStatistics);
+                string json = JsonService.Serialize(GameStatistics.ToList());
+                File.WriteAllText(StatisticsFileName, json);
             }
-
-            return gameStatistics;
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error while saving statistics: {ex.Message}");
+            }
         }
 
         public int WhiteWins()
@@ -55,5 +46,26 @@ namespace Checkers.Repositories
             return GameStatistics.Count;
         }
 
+        private ObservableCollection<GameStatistics> LoadGameStatistics()
+        {
+            try
+            {
+                if (!File.Exists(StatisticsFileName))
+                {
+                    File.Create(StatisticsFileName).Dispose();
+                    return new ObservableCollection<GameStatistics>();
+                }
+
+                string fileContent = File.ReadAllText(StatisticsFileName);
+                List<GameStatistics> statisticsList = JsonService.Deserialize<List<GameStatistics>>(fileContent);
+
+                return new ObservableCollection<GameStatistics>(statisticsList);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error while loading statistics: {ex.Message}");
+                return new ObservableCollection<GameStatistics>();
+            }
+        }
     }
 }

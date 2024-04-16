@@ -1,4 +1,5 @@
 ﻿using Checkers.Models;
+using Checkers.Repositories;
 using Checkers.Services;
 using Checkers.Views;
 using System.Windows;
@@ -12,6 +13,8 @@ namespace Checkers.ViewModels
 
         private readonly FilesService _jsonService;
 
+        private readonly GamesDataRepository _gamesDataRepository;
+
         private GameStatus _gameStatus;
 
         public GameStatus GameStatus
@@ -24,31 +27,17 @@ namespace Checkers.ViewModels
                     _gameStatus = value;
                     OnPropertyChanged(nameof(GameStatus));
                     OnPropertyChanged(nameof(GameStatus.Cells));
+                    OnPropertyChanged(nameof(GameStatus.CurrentPlayer));
                 }
             }
         }
-
-        public PlayerType CurrentPlayer
-        {
-            get { return _gameStatus.CurrentPlayer; }
-
-            set
-            {
-                if (_gameStatus.CurrentPlayer != value)
-                {
-                    _gameStatus.CurrentPlayer = value;
-                    OnPropertyChanged(nameof(CurrentPlayer));
-                }
-            }
-        }
-
 
         public BoardViewModel()
         {
-
             GameStatus = new GameStatus(PlayerType.White);
             _gameService = new GameService(GameStatus);
             _jsonService = new FilesService();
+            _gamesDataRepository = new GamesDataRepository();
 
             ClickCellCommand = new RelayCommand(ClickCell);
             MovePieceCommand = new RelayCommand(MovePiece, IsMoveValid);
@@ -135,15 +124,9 @@ namespace Checkers.ViewModels
 
         public void MovePiece(object parameter)
         {
-            int whiteCheckers = GameStatus.WhiteCheckers;
-            int blackCheckers = GameStatus.BlackCheckers;
+            _gameService.MovePiece(GameStatus.Cells);
 
-            _gameService.MovePiece(GameStatus.Cells, ref whiteCheckers, ref blackCheckers);
-
-            GameStatus.WhiteCheckers = whiteCheckers;
-            GameStatus.BlackCheckers = blackCheckers;
-            _gameService.GameOver(GameStatus.WhiteCheckers, GameStatus.BlackCheckers);
-
+            _gameService.GameOver();
 
             _gameStatus.GameStarted = true;
         }

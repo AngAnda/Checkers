@@ -4,8 +4,16 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Checkers.Views"
+        xmlns:vm="clr-namespace:Checkers.ViewModels"
         mc:Ignorable="d"
         Title="Statistics" Height="450" Width="800">
+
+
+    <Window.DataContext>
+        <vm:StatisticsViewModel/>
+    </Window.DataContext>
+    
+    
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -46,9 +54,9 @@
         </StackPanel>
 
         <StackPanel Grid.Row="3" Margin="10">
-            <TextBlock Text="Maximum pieces remaining on board at end of game:"
+            <TextBlock Text="Total numbers of games:"
                        FontSize="16"/>
-            <TextBlock Text="{Binding MaxPiecesRemaining}"
+            <TextBlock Text="{Binding TotalGames}"
                        FontSize="16" FontWeight="Bold"
                        HorizontalAlignment="Center"/>
         </StackPanel>

@@ -1,5 +1,6 @@
 ﻿using Checkers.Helpers;
 using Checkers.Models;
+using Checkers.Repositories;
 using System.Collections.ObjectModel;
 using System.Windows;
 
@@ -8,7 +9,7 @@ namespace Checkers.Services
     public class GameService
     {
 
-        private (int line, int column)? _currentCell, _newCell;
+        private Cell CurrentCell, NewCell;
 
         private bool _currentMultipleJump;
 
@@ -17,19 +18,22 @@ namespace Checkers.Services
         private BoardManager boardManager;
 
         private MoveValidator moveValidator;
+
+        private GamesDataRepository _gamesDataRepository;
         public GameService(GameStatus gameStatus)
         {
-            _currentCell = null;
-            _newCell = null;
+            CurrentCell = null;
+            NewCell = null;
             _gameStatus = gameStatus;
             moveValidator = new MoveValidator();
             boardManager = new BoardManager();
+            _gamesDataRepository = new GamesDataRepository();
         }
 
         public void Reset()
         {
-            _currentCell = null;
-            _newCell = null;
+            CurrentCell = null;
+            NewCell = null;
             _currentMultipleJump = false;
         }
 
@@ -40,21 +44,38 @@ namespace Checkers.Services
 
         public bool IsMoveValid(ObservableCollection<Cell> cells)
         {
-            if (_currentCell == null || _newCell == null)
+            if (CurrentCell == null || NewCell == null)
                 return false;
 
-            Cell startCell = cells[_currentCell.Value.line * 8 + _currentCell.Value.column];
-            Cell endCell = cells[_newCell.Value.line * 8 + _newCell.Value.column];
+            return moveValidator.IsMoveValid(_gameStatus, CurrentCell, NewCell, _currentMultipleJump);
 
-            return moveValidator.IsMoveValid(_gameStatus, startCell, endCell, _currentMultipleJump);
+        }
 
+
+        public bool AnyMoveValid()
+        {
+            for (int i = 0; i < _gameStatus.Cells.Count; i++)
+            {
+                if (_gameStatus.Cells[i].IsOccupied && CheckerHelper.GetPlayerTypeFromChecker(_gameStatus.Cells[i].Content) == _gameStatus.CurrentPlayer)
+                {
+                    for (int j = 0; j < _gameStatus.Cells.Count; j++)
+                    {
+                        if (!moveValidator.IsMoveValid(_gameStatus, _gameStatus.Cells[i], _gameStatus.Cells[j], _currentMultipleJump))
+                        {
+                            continue;
+                        }
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         private void AssignCurrentCell(Cell cell)
         {
             if (CheckerHelper.GetPlayerTypeFromChecker(cell.Content) == _gameStatus.CurrentPlayer)
             {
-                _currentCell = (cell.Line, cell.Column);
+                CurrentCell = cell;
             }
         }
 
@@ -62,22 +83,22 @@ namespace Checkers.Services
         {
             if (CheckerHelper.GetPlayerTypeFromChecker(cell.Content) == PlayerType.None)
             {
-                _newCell = (cell.Line, cell.Column);
+                NewCell = cell;
             }
         }
 
 
-        public void MovePiece(ObservableCollection<Cell> cells, ref int whiteCheckerNumber, ref int blackCheckerNumber)
+        public void MovePiece(ObservableCollection<Cell> cells)
         {
 
             bool possibleMultipleMove = false;
 
-            // se gaseste celula initiala
-            var currentCellIndex = _currentCell.Value.line * 8 + _currentCell.Value.column;
-            var newCellIndex = _newCell.Value.line * 8 + _newCell.Value.column;
+            //// se gaseste celula initiala
+            var currentCellIndex = CurrentCell.Line * 8 + CurrentCell.Column;
+            var newCellIndex = NewCell.Line * 8 + NewCell.Column;
 
-            // functionalitate pentru a captura o piesa
-            if (moveValidator.IsJump(_gameStatus, cells[currentCellIndex], cells[newCellIndex]))
+            //// functionalitate pentru a captura o piesa
+            if (moveValidator.IsJump(_gameStatus, CurrentCell, NewCell))
             {
                 // se gaseste celula intermediara
                 boardManager.JumpOverChecker(_gameStatus, currentCellIndex, newCellIndex);
@@ -91,7 +112,7 @@ namespace Checkers.Services
 
             // se verifica daca functia a devenit king
             boardManager.CheckForKing(_gameStatus, _gameStatus.Cells[newCellIndex]);
-            _currentCell = _newCell;
+            CurrentCell = NewCell;
 
             if (moveValidator.MultipleJumps(_gameStatus, cells[newCellIndex])  // se verifica daca sunt posibile multiple mutari
                 && !_currentMultipleJump // se verifica daca suntem in mijlocul unei sarituri multiple
@@ -102,25 +123,31 @@ namespace Checkers.Services
             // se verifica daca a fost facuta o saritura 
             {
                 MessageBox.Show($"Multiple jumps are allowed for {_gameStatus.CurrentPlayer}");
-                _newCell = null;
+                NewCell = null;
                 _currentMultipleJump = true;
             }
             else
             {
                 boardManager.ChangePlayer(_gameStatus);
-                _currentCell = null;
-                _newCell = null;
+                CurrentCell = null;
+                NewCell = null;
                 _gameStatus.GameStarted = false;
                 _currentMultipleJump = false;
             }
-
         }
 
-        public void GameOver(int whiteCheckerNumber, int blackCheckerNumber)
+        public void GameOver()
         {
-            if (whiteCheckerNumber == 0 || blackCheckerNumber == 0)
+            bool draught = !AnyMoveValid();
+            if (_gameStatus.WhiteCheckers == 0 || _gameStatus.BlackCheckers == 0 || draught)
             {
-                MessageBox.Show("Game Over");
+                PlayerType winner = _gameStatus.WhiteCheckers < _gameStatus.BlackCheckers
+                    || (_gameStatus.WhiteCheckers == _gameStatus.BlackCheckers && _gameStatus.CurrentPlayer == PlayerType.White) ?
+                    PlayerType.White : PlayerType.Black;
+                GameStatistics gameStatistics = new GameStatistics(winner, _gameStatus.WhiteCheckers, _gameStatus.BlackCheckers);
+                _gamesDataRepository.SaveGameStatistics(gameStatistics);
+
+                MessageBox.Show($"Game Over\n Winner {winner}");
             }
         }
 

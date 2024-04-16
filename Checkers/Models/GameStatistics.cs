@@ -18,6 +18,10 @@ namespace Checkers.Models
             BlackCheckers = gameStatus.BlackCheckers;
         }
 
+        public GameStatistics()
+        {
+        }
+
         public PlayerType Winner { get; set; }
 
         public int WhiteCheckers { get; set; }

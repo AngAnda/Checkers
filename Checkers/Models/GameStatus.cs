@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 
 namespace Checkers.Models
 {
-    public class GameStatus
+    public class GameStatus : BaseViewModel
     {
         public GameStatus()
         {
@@ -60,14 +60,26 @@ namespace Checkers.Models
 
         public ObservableCollection<Cell> Cells { get; set; }
 
-        public PlayerType CurrentPlayer { get; set; }
+        private PlayerType _currentPlayer;
+
+        public PlayerType CurrentPlayer
+        {
+            get => _currentPlayer;
+            set
+            {
+                if (_currentPlayer != value)
+                {
+                    _currentPlayer = value;
+                    OnPropertyChanged(nameof(CurrentPlayer));
+                }
+            }
+        }
 
         public bool IsMultiJump { get; set; }
 
         public int WhiteCheckers { get; set; }
 
         public int BlackCheckers { get; set; }
-
         public bool GameStarted { get; set; }
 
     }
